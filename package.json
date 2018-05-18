@@ -1,0 +1,31 @@
+{
+  "name": "jsgrep-cli",
+  "version": "1.0.0",
+  "description": "An alternative to grep which uses JavaScript's Regex, supports a match and a match-and-replace",
+  "main": "index.js",
+  "bin": {
+    "jsgrep": "index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/branneman/jsgrep-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/branneman/jsgrep-cli/issues"
+  },
+  "homepage": "https://github.com/branneman/jsgrep-cli#readme",
+  "keywords": [
+    "grep",
+    "js",
+    "pcre",
+    "regex",
+    "cli",
+    "tool"
+  ],
+  "author": "Bran van der Meer <bran.van.der.meer@protonmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^2.15.1",
+    "safe-regex": "^1.1.0"
+  }
+}
