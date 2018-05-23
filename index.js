@@ -1,90 +1,43 @@
-var pkg = require('./package.json')
-var REGEX_EOL = /(\r?\n)/
-var EOL = require('os').EOL
-var program = require('commander')
-var safe = require('safe-regex')
+#!/usr/bin/env node
 
-process.on('uncaughtException', function(str) {
-  console.error('\n  error: ' + str.message + '\n')
-  process.exit(1)
+var commander = require('commander')
+var isSafeRegEx = require('safe-regex')
+var osEOL = require('os').EOL
+
+/**
+ * Bootstrap app:
+ *  Inject dependencies, parse CLI arguments
+ */
+var cli = require('./util/cli').configure(commander, isSafeRegEx)
+var io = require('./util/io').configure(osEOL)
+io.setupErrorHandler()
+var program = cli.setupArgumentHandler(process.argv)
+
+/**
+ * Run app:
+ *  A read-eval-print-loop for each line
+ */
+io.readStdin(function _readStdin(data) {
+  data
+    .map(cli.getCommand(program, match, matchReplace))
+    .filter(io.isFalsy)
+    .forEach(io.writeStdout)
 })
 
 /**
- * Parse arguments
+ * Command: Match
  */
-program
-  .version(pkg.version)
-  .usage('[options] <regex ...>')
-  .option('-f, --flags <flags>', 'The used RegEx flags, default: i', 'i')
-  .parse(process.argv)
-
-var operation
-switch (program.args.length) {
-  case 1:
-    operation = match(program.args[0], program.flags)
-    break
-  case 2:
-    operation = matchReplace(program.args[0], program.args[1], program.flags)
-    break
-  default:
-    throw new Error('RegEx argument missing')
-}
-
-/**
- * Is passed RegEx safe?
- */
-var regex = new RegExp(program.args[0], program.flags)
-if (!safe(regex)) {
-  throw new Error(
-    'Passed RegEx is potentially catastrophic (exponential-time: star-height > 1)'
-  )
-}
-
-/**
- * Read from `stdin` pipe
- */
-process.stdin.setEncoding('utf8')
-process.stdin.on('readable', function() {
-  var chunk = process.stdin.read()
-  if (chunk !== null) {
-    processInput(chunk)
-  }
-})
-
-/**
- * Process input, line by line
- */
-function processInput(chunk) {
-  chunk
-    .split(REGEX_EOL)
-    .map(operation)
-    .filter(function filterEmptyLines(line) {
-      return !!line
-    })
-    .forEach(function stdout(out) {
-      process.stdout.write(out)
-      process.stdout.write(EOL)
-    })
-}
-
-/**
- * Operation: Match
- */
-function match(matchRegexStr, flags) {
-  var matchRegex = new RegExp(matchRegexStr, flags)
-
-  return function(line) {
+function match(matchRegex) {
+  return function _match(line) {
     return line.match(matchRegex) ? line : ''
   }
 }
 
 /**
- * Operation: Match & Replace
+ * Command: Match & Replace
  */
-function matchReplace(matchRegexStr, replaceStr, flags) {
-  var matchRegex = new RegExp(matchRegexStr, flags)
-
-  return function(line) {
+function matchReplace(matchRegex, replaceStr) {
+  return function _matchReplace(line) {
     if (!line.match(matchRegex)) {
       return ''
     }
